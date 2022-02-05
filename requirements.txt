@@ -1,2 +1,3 @@
 chess
+Flask
 pystockfish
