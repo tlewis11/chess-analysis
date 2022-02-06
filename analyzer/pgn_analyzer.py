@@ -10,7 +10,7 @@ def suggest_move(fen=None, moves=[]):
     deep.setfenposition(fen)
   else:
     deep.setposition(moves)
-  best_move = deep.bestmove()
+  best_move = deep.bestmove()['move']
   return best_move
 
 if __name__ == '__main__':

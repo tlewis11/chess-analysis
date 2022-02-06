@@ -10,8 +10,13 @@ def index():
 
 @app.route('/suggest', methods=['post'])
 def suggest():
+    print(request.json)
+    print(request.form)
+    print(request.data)
+
+
     suggested_move = suggest_move(fen=request.form['fen'])
-    return suggested_move
+    return {"move": suggested_move}
 
 if __name__ == "__main__":
     app.run(debug=True)
