@@ -10,12 +10,13 @@ def index():
 
 @app.route('/suggest', methods=['post'])
 def suggest():
-    print(request.json)
-    print(request.form)
-    print(request.data)
 
-
-    suggested_move = suggest_move(fen=request.form['fen'])
+    if request.form['fen']:
+        suggested_move = suggest_move(fen=request.form['fen'])
+    elif request.form['pgn']:
+        suggested_move = suggest_move(pgn=request.form['pgn'])
+    else:
+        return {"error": "fen or pgn must be supplied to post"}
     return {"move": suggested_move}
 
 if __name__ == "__main__":
