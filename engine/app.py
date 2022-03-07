@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request
 from analyzer.pgn_analyzer import suggest_move
+from flask_cors import CORS
 
 app = Flask(__name__)
+cors = CORS(app)
 
 @app.route('/')
 @app.route('/index')

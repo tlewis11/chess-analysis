@@ -1,12 +1,19 @@
-This application will analayze a chess game's PGN and recommend moves.
+This repo allows you to play against stockfish.
+engine service - Flask App that leverages pystockfish to analyze fen or pgn strings.
+frontend service - React App that allows a player to play against Stockfish
 
-Run the Docker container locally
+# required tools:
+docker compose
+make
 
+# Quick Start: 
+
+build docker images and run services with docker-compose
 ```
-docker build pgn-analyzer .
-docker run -it pgn-analyzer
+make build
+make run
 ```
 
-Create API to run as container.  Allow a pgn to be uploaded. 
-https://github.com/Elucidation/tensorflow_chessbot
-https://neptune.ai/blog/image-processing-python-libraries-for-machine-learning
+Browse to localhost:3000 and play as white against Stockfish. 
+
+Access Stockfish API directly at localhost:5000 

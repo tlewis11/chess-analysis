@@ -1,3 +1,4 @@
 chess
 Flask
+flask-cors
 pystockfish

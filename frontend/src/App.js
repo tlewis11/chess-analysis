@@ -5,7 +5,7 @@ import { Chessboard } from 'react-chessboard';
 const axios = require('axios')
 
 
-const SERVER_URL = 'http://localhost:3000'; //process.env.REACT_APP_SERVER_URL;
+const SERVER_URL = 'http://localhost:5000'; //process.env.REACT_APP_SERVER_URL;
 
 export default function App() {
   const [game, setGame] = useState(new Chess());
