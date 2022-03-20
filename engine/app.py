@@ -14,8 +14,10 @@ def index():
 def suggest():
 
     if request.form['fen']:
+        print(f'pgn submitted: {request.form["fen"]}')
         suggested_move = suggest_move(fen=request.form['fen'])
     elif request.form['pgn']:
+        print(f'pgn submitted: {request.form["pgn"]}')
         suggested_move = suggest_move(pgn=request.form['pgn'])
     else:
         return {"error": "fen or pgn must be supplied to post"}
