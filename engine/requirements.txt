@@ -2,3 +2,5 @@ chess
 Flask
 flask-cors
 pystockfish
+pyjwt
+flask_swagger_ui
