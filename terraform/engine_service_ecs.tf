@@ -1,3 +1,5 @@
+# TODO: vpc.tf
+
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 }
@@ -41,6 +43,15 @@ resource "aws_subnet" "secondary" {
   }
 }
 
+resource "aws_route_table_association" "rt_association_a" {
+  subnet_id      = aws_subnet.main.id
+  route_table_id = aws_route_table.public_table.id
+}
+resource "aws_route_table_association" "rt_association_b" {
+  subnet_id      = aws_subnet.secondary.id
+  route_table_id = aws_route_table.public_table.id
+}
+# TODO: load_balancer.tf
 resource "aws_security_group" "load_balancer_sg" {
   name        = "analyzeyourchessgames"
   description = "for alb of analyzeyourchessgames.com"
@@ -84,18 +95,66 @@ resource "aws_ecs_cluster" "chess_cluster" {
   }
 }
 
+resource "aws_lb_target_group" "engine_tg" {
+  name        = "chess-engine-tg"
+  port        = 5000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+}
+
+resource "aws_lb_listener" "default_listener" {
+  load_balancer_arn = aws_lb.chess_engine_alb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.engine_tg.arn
+  }
+}
+
+
+
+#ecs_service.tf =======================================
+
+resource "aws_security_group" "ecs_service_sg" {
+  name        = "stockfish-engine"
+  description = "applied to stockfish-engine ecs tasks"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description      = "TLS from VPC"
+    from_port        = 5000
+    to_port          = 5000
+    protocol         = "tcp"
+    cidr_blocks      = [aws_vpc.main.cidr_block]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
+
 resource "aws_ecs_task_definition" "engine_taskdef" {
   family = "stockfish-engine"
   requires_compatibilities = ["FARGATE"]
   network_mode  = "awsvpc"
   cpu = 1024
   memory    = 2048
+  execution_role_arn       = aws_iam_role.ecs_service_role.arn
+
 
   container_definitions = jsonencode(
   [
     {
       name      = "stockfish-engine"
-      image     = "python"
+      image     = aws_ecr_repository.engine_ecr_repo.repository_url
       cpu       = 1024
       memory    = 2048
       essential = true
@@ -105,10 +164,21 @@ resource "aws_ecs_task_definition" "engine_taskdef" {
           hostPort      = 5000
         }
       ]
+      logConfiguration = {
+        logdriver = "awslogs"
+        options = {
+          awslogs-group = aws_cloudwatch_log_group.ecs_service_log_group.name,
+          awslogs-region = "us-east-1"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
 }
 
+resource "aws_cloudwatch_log_group" "ecs_service_log_group" {
+  name = "stockfish-engine-ecs-service-logs"
+}
 
 resource "aws_iam_policy" "ecs_policy" {
   name = "chess-engine-ecs-policy"
@@ -135,7 +205,7 @@ resource "aws_iam_role" "ecs_service_role" {
         Effect = "Allow"
         Sid    = ""
         Principal = {
-          Service = "ecs.amazonaws.com"
+          Service = ["ecs.amazonaws.com","ecs-tasks.amazonaws.com"]
         }
       },
     ]
@@ -159,25 +229,16 @@ resource "aws_ecs_service" "engine_service" {
 
   network_configuration {
     subnets            = [aws_subnet.main.id, aws_subnet.secondary.id]
+    assign_public_ip = true
+    security_groups = [aws_security_group.ecs_service_sg.id]
   }
 }
 
-resource "aws_lb_target_group" "engine_tg" {
-  name        = "chess-engine-tg"
-  port        = 5000
-  protocol    = "HTTP"
-  vpc_id      = aws_vpc.main.id
-  target_type = "ip"
+resource "aws_ecr_repository" "engine_ecr_repo" {
+  name                 = "stockfish-engine"
+  image_tag_mutability = "MUTABLE"
 
-}
-
-resource "aws_lb_listener" "default_listener" {
-  load_balancer_arn = aws_lb.chess_engine_alb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.engine_tg.arn
+  image_scanning_configuration {
+    scan_on_push = true
   }
 }
