@@ -18,6 +18,8 @@ export default function App() {
   }
 
   function makeEngineMove() {
+    console.log('will ask stockfish for best move against fen: ' + game.fen());
+
     const possibleMoves = game.moves();
     
     if (game.game_over() || game.in_draw() || possibleMoves.length === 0) return; // exit if the game is over
@@ -60,5 +62,8 @@ export default function App() {
     return true;
   }
 
-  return <Chessboard position={game.fen()} onPieceDrop={onDrop} />;
+  return <div>
+            <Chessboard position={game.fen()} onPieceDrop={onDrop} />
+            fen: {game.fen()}
+          </div>;
 }
