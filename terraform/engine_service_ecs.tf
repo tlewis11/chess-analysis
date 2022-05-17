@@ -1,3 +1,7 @@
+data "aws_acm_certificate" "chess_cert" {
+  domain   = "analyzeyourchessgames.com"
+}
+
 # TODO: vpc.tf
 
 resource "aws_vpc" "main" {
@@ -51,7 +55,9 @@ resource "aws_route_table_association" "rt_association_b" {
   subnet_id      = aws_subnet.secondary.id
   route_table_id = aws_route_table.public_table.id
 }
-# TODO: load_balancer.tf
+
+
+#TODO: load_balancer.tf
 resource "aws_security_group" "load_balancer_sg" {
   name        = "analyzeyourchessgames"
   description = "for alb of analyzeyourchessgames.com"
@@ -115,7 +121,18 @@ resource "aws_lb_listener" "default_listener" {
   }
 }
 
+resource "aws_lb_listener" "https_listener" {
+  load_balancer_arn = aws_lb.chess_engine_alb.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   =  data.aws_acm_certificate.chess_cert.arn
 
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.engine_tg.arn
+  }
+}
 
 #ecs_service.tf =======================================
 
